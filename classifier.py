@@ -10,7 +10,7 @@ import joblib
 # ============================================
 # LOAD DATA
 # ============================================
-df = pd.read_csv("Angles_With_BadPoses.csv")
+df = pd.read_csv("Results/Angles_With_BadPoses.csv")
 
 # Features = all angle columns
 X = df.drop(columns=["Pose", "Image_Name", "Label"])
