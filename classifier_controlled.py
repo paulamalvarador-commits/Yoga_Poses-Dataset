@@ -4,6 +4,9 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.pipeline import Pipeline
+from sklearn.metrics import classification_report
+from sklearn.model_selection import GridSearchCV
 from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 import joblib
@@ -64,19 +67,37 @@ print(classification_report(y_test, y_pred_rf))
 
 # SVM
 
-svm = SVC(
-    kernel='rbf',
-    C=10,
-    gamma='scale',
-    class_weight='balanced'
+svm_clf = Pipeline([
+    ("scaler", StandardScaler()),
+    ("svm", SVC(kernel="rbf", C=1, gamma="scale", class_weight="balanced"))
+])
+
+param_grid = {
+    "svm__C": [0.1, 1, 10, 50, 100],
+    "svm__gamma": ["scale", 0.01, 0.001, 0.0001],
+    "svm__kernel": ["rbf", "poly"]
+}
+
+grid = GridSearchCV(
+    svm_clf,
+    param_grid,
+    cv=5,
+    scoring="f1",
+    n_jobs=-1
 )
 
-svm.fit(X_train_scaled, y_train)
-y_pred_svm = svm.predict(X_test)
+grid.fit(X_train, y_train)
+
+# Obtener el mejor modelo
+best_svm = grid.best_estimator_
+
+# Predecir con el mejor SVM
+y_pred_svm = best_svm.predict(X_test)
 
 print("\n================ SVM ================")
+print("Mejores hiperparámetros:", grid.best_params_)
 print("Accuracy:", accuracy_score(y_test, y_pred_svm))
-print(classification_report(y_test, y_pred_svm))
+print(classification_report(y_test, y_pred_svm, zero_division=0))
 
 
 # ============================================

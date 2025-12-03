@@ -5,6 +5,8 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
+from sklearn.pipeline import Pipeline
+from sklearn.metrics import classification_report
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 import joblib
 
@@ -12,7 +14,7 @@ import joblib
 # LOAD DATA
 # ============================================
 df = pd.read_csv("Results/Angles_With_BadPoses.csv")
-df = pd.read_csv("Results/Angles_With_BadPoses_Controlled.csv")
+#df = pd.read_csv("Results/Angles_With_BadPoses_Controlled.csv")
 
 # Features = all angle columns
 X = df.drop(columns=["Pose", "Image_Name", "Label"]) 
@@ -63,19 +65,18 @@ print(classification_report(y_test, y_pred_rf))
 
 # SVM
 
-svm = SVC(
-    kernel='rbf',
-    C=10,
-    gamma='scale',
-    class_weight='balanced'
-)
+svm_clf = Pipeline([
+    ("scaler", StandardScaler()),
+    ("svm", SVC(kernel="rbf", C=100, gamma="scale", class_weight="balanced"))
+])
 
-svm.fit(X_train_scaled, y_train)
-y_pred_svm = svm.predict(X_test)
+svm_clf.fit(X_train_scaled, y_train)
+y_pred_svm = svm_clf.predict(X_test_scaled)
 
 print("\n================ SVM ================")
 print("Accuracy:", accuracy_score(y_test, y_pred_svm))
-print(classification_report(y_test, y_pred_svm))
+#print(classification_report(y_test, y_pred_svm))
+print(classification_report(y_test, y_pred_svm, zero_division=0))
 
 
 # ============================================
