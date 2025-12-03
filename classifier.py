@@ -14,8 +14,8 @@ import joblib
 df = pd.read_csv("Results/Angles_With_BadPoses.csv")
 
 # Features = all angle columns
-#X = df.drop(columns=["Pose", "Image_Name", "Label"]) 
-X = df.drop(columns=["Pose", "Image_Name", "Label","Error_Type"]) 
+X = df.drop(columns=["Pose", "Image_Name", "Label"]) 
+#X = df.drop(columns=["Pose", "Image_Name", "Label","Error_Type"]) 
 y = df["Label"]
 
 # ============================================
@@ -48,12 +48,9 @@ print(classification_report(y_test, y_pred_lr))
 # 2) RANDOM FOREST (better model)
 # ============================================
 rf = RandomForestClassifier(
-    n_estimators=400,
-    max_depth=None,   # deja que los árboles profundicen más
-    min_samples_leaf=3,
-    class_weight="balanced_subsample",
-    random_state=42,
-    n_jobs=-1         # usa todos los cores, acelera mucho
+    n_estimators=300,
+    max_depth=12,   # deja que los árboles profundicen más
+    random_state=42        # usa todos los cores, acelera mucho
 )
 
 rf.fit(X_train, y_train)
