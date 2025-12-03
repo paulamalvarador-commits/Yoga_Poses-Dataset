@@ -1,3 +1,13 @@
+# Large model files
+*.pkl
+regression_model.pkl
+regression_angle_cols.pkl
+
+# Generated CSV datasets (recreatable from images)
+Results/*.csv
+Angles_With_Corrections.csv
+Regression_Dataset.csv
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
