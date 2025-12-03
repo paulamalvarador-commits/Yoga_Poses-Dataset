@@ -1,71 +1,91 @@
 import pandas as pd
 import numpy as np
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
-from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
-import joblib
 
 # ============================================
-# LOAD DATA
+# CONFIG: HOW MANY BAD POSES PER GOOD POSE?
 # ============================================
-df = pd.read_csv("Results/Angles_With_BadPoses.csv")
-
-# Features = all angle columns
-X = df.drop(columns=["Pose", "Image_Name", "Label"]) 
-y = df["Label"]
+N_BAD = 3   # <-- CAMBIA ESTE VALOR
 
 # ============================================
-# TRAIN/TEST SPLIT
+# LOAD ORIGINAL DATA
 # ============================================
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.20, random_state=42, stratify=y
-)
+df = pd.read_csv("Results/All_Poses_Angles.csv")
+
+# Mark all as GOOD
+df["Label"] = 1
+
+# Angle columns (all angle fields)
+angle_cols = df.columns[2:-1]
 
 # ============================================
-# SCALE FEATURES (Logistic Regression needs it)
+# BIOMECHANICAL LIMITS FOR EACH JOINT
 # ============================================
-scaler = StandardScaler()
-X_train_scaled = scaler.fit_transform(X_train)
-X_test_scaled = scaler.transform(X_test)
+def clip_angle(joint, value):
+    limits = {
+        "elbow": (10, 170),
+        "shoulder": (20, 160),
+        "knee": (20, 170),
+        "hip": (30, 160),
+        "neck": (70, 300),
+        "wrist": (0, 330)
+    }
+    for key, (low, high) in limits.items():
+        if key in joint:
+            return np.clip(value, low, high)
+    return value
 
-# ============================================
-# 1) LOGISTIC REGRESSION
-# ============================================
-log_reg = LogisticRegression(max_iter=200)
-log_reg.fit(X_train_scaled, y_train)
-
-y_pred_lr = log_reg.predict(X_test_scaled)
-
-print("\n================ LOGISTIC REGRESSION ================")
-print("Accuracy:", accuracy_score(y_test, y_pred_lr))
-print(classification_report(y_test, y_pred_lr))
-
-# ============================================
-# 2) RANDOM FOREST (better model)
-# ============================================
-rf = RandomForestClassifier(
-    n_estimators=300,
-    max_depth=12,
-    random_state=42
-)
-
-rf.fit(X_train, y_train)
-y_pred_rf = rf.predict(X_test)
-
-print("\n================ RANDOM FOREST ================")
-print("Accuracy:", accuracy_score(y_test, y_pred_rf))
-print(classification_report(y_test, y_pred_rf))
 
 # ============================================
-# SAVE MODELS
+# BAD POSE GENERATOR
 # ============================================
-joblib.dump(log_reg, "logistic_pose_classifier.pkl")
-joblib.dump(rf, "random_forest_pose_classifier.pkl")
-joblib.dump(scaler, "scaler.pkl")
+def make_bad_pose(row):
+    """
+    Generates ONE synthetic bad pose from a good pose.
+    Noise_strength chosen randomly.
+    """
+    noise_strength = np.random.choice([1, 2, 3])
+    noisy = row.copy()
 
-print("\nModels saved:")
-print(" - logistic_pose_classifier.pkl")
-print(" - random_forest_pose_classifier.pkl")
-print(" - scaler.pkl")
+    for col in angle_cols:
+        angle = row[col]
+
+        # apply different noise amounts
+        if noise_strength == 1:
+            angle += np.random.uniform(-15, 15)
+        elif noise_strength == 2:
+            angle += np.random.uniform(-35, 35)
+        else:
+            angle += np.random.uniform(-70, 70)
+
+        # clip to anatomical limits
+        noisy[col] = clip_angle(col.lower(), angle)
+
+    noisy["Label"] = 0  # 0 = bad pose
+    return noisy
+
+
+# ============================================
+# GENERATE N_BAD POSES FOR EACH GOOD POSE
+# ============================================
+bad_samples = []
+
+for _, row in df.iterrows():
+    for _ in range(N_BAD):       # <-- AÑADIDO
+        bad_samples.append(make_bad_pose(row))
+
+df_bad = pd.DataFrame(bad_samples)
+
+# ============================================
+# COMBINE GOOD + BAD
+# ============================================
+df_final = pd.concat([df, df_bad], ignore_index=True)
+
+print("Final dataset size:", df_final.shape)
+print(df_final["Label"].value_counts())
+
+# ============================================
+# SAVE
+# ============================================
+df_final.to_csv("Results/Angles_With_BadPoses.csv", index=False)
+
+print("\nDataset saved as Angles_With_BadPoses.csv")
