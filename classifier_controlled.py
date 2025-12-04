@@ -103,11 +103,11 @@ print(classification_report(y_test, y_pred_svm, zero_division=0))
 # ============================================
 # SAVE MODELS
 # ============================================
-joblib.dump(log_reg, "logistic_pose_classifier.pkl")
-joblib.dump(rf, "random_forest_pose_classifier.pkl")
+joblib.dump(log_reg, "logistic_pose_classifier_controlled.pkl")
+joblib.dump(rf, "random_forest_pose_classifier_controlled.pkl")
 joblib.dump(scaler, "scaler.pkl")
 
 print("\nModels saved:")
-print(" - logistic_pose_classifier.pkl")
-print(" - random_forest_pose_classifier.pkl")
+print(" - logistic_pose_classifier_controlled.pkl")
+print(" - random_forest_pose_classifier_controlled.pkl")
 print(" - scaler.pkl")

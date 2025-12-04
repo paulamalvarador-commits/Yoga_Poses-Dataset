@@ -3,6 +3,7 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 import numpy as np
+import joblib
 
 # -----------------------------
 # 1. Load data
@@ -19,15 +20,9 @@ good_df = df[df["Label"] == 1]
 # 2. Build ONE multitarget model
 # -----------------------------
 
-# ❗ Drop non-numeric columns
-X = good_df.drop(columns=["Pose", "Image_Name"] + angle_cols + ["Label"])
-
-# 👉 X is empty now because your dataset has no extra numeric features.
-# So we will use ALL angles to predict ALL angles.
-# This works fine for error evaluation.
-
-X = good_df[angle_cols]        # features: all angles
-y = good_df[angle_cols]        # targets: all angles
+# Use all angles as features
+X = good_df[angle_cols]
+y = good_df[angle_cols]
 
 # Train/test split
 X_train, X_test, y_train, y_test = train_test_split(
@@ -60,4 +55,10 @@ for angle in angle_cols:
 eval_df = pd.DataFrame(results, columns=["Angle", "MAE", "RMSE", "R2_Score"])
 eval_df.to_csv("Results/Multioutput_Evaluation_Controlled.csv", index=False)
 
-print("\nSaved to: Results/Multioutput_Evaluation_Controlled.csv")
+print("\nSaved evaluation to: Results/Multioutput_Evaluation_Controlled.csv")
+
+# -----------------------------
+# 5. Save MODEL for real-time use
+# -----------------------------
+joblib.dump(model, "Results/Multioutput_Regressor.pkl")
+print("Saved model to: Results/Multioutput_Regressor.pkl")
